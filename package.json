@@ -1,0 +1,26 @@
+{
+  "name": "the-freelancers-lawyer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node tests/testContractAnalyzer.test.js && node tests/testPdfContractAnalyzer.test.js",
+    "test:pdf": "node tests/testPdfContractAnalyzer.test.js",
+    "generate-pdf-tests": "node scripts/generatePdfTestContracts.js"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.4",
+    "lucide-react": "^0.475.0",
+    "pdfjs-dist": "^3.11.174",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.3",
+    "pdf-lib": "^1.17.1",
+    "vite": "^5.4.11"
+  }
+}

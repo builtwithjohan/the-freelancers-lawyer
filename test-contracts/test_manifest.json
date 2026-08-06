@@ -1,0 +1,77 @@
+{
+  "suite": "The Freelancer's Lawyer Contract Threat Test Suite",
+  "version": "1.0.0",
+  "testCases": [
+    {
+      "id": "TC-01",
+      "file": "01_sneaky_ip_and_moral_rights.md",
+      "name": "The Stealth IP & Moral Rights Seizure",
+      "expectedMinScore": 85,
+      "expectedMaxScore": 100,
+      "expectedHazardBadge": "☣️ CRITICAL THREAT",
+      "expectedRuleIds": [
+        "rule-ip-before-payment",
+        "rule-preexisting-code-grab",
+        "rule-moral-rights-waiver"
+      ]
+    },
+    {
+      "id": "TC-02",
+      "file": "02_unlimited_edits_and_daily_fines.md",
+      "name": "Unlimited Revisions & Liquidated Damages",
+      "expectedMinScore": 80,
+      "expectedMaxScore": 100,
+      "expectedHazardBadge": "☣️ CRITICAL THREAT",
+      "expectedRuleIds": [
+        "rule-unlimited-revisions",
+        "rule-daily-delay-fines"
+      ]
+    },
+    {
+      "id": "TC-03",
+      "file": "03_net90_and_pay_when_paid.md",
+      "name": "Net-90 Payment & Termination Without Pay",
+      "expectedMinScore": 85,
+      "expectedMaxScore": 100,
+      "expectedHazardBadge": "☣️ CRITICAL THREAT",
+      "expectedRuleIds": [
+        "rule-net90-payment",
+        "rule-withhold-payment",
+        "rule-termination-no-pay"
+      ]
+    },
+    {
+      "id": "TC-04",
+      "file": "04_uncapped_indemnity_and_audit.md",
+      "name": "Uncapped Liability & Computer Audit Rights",
+      "expectedMinScore": 85,
+      "expectedMaxScore": 100,
+      "expectedHazardBadge": "☣️ CRITICAL THREAT",
+      "expectedRuleIds": [
+        "rule-uncapped-liability",
+        "rule-audit-rights",
+        "rule-remote-jurisdiction"
+      ]
+    },
+    {
+      "id": "TC-05",
+      "file": "05_broad_noncompete_and_nonsolicit.md",
+      "name": "3-Year Global Non-Compete Lockout",
+      "expectedMinScore": 75,
+      "expectedMaxScore": 98,
+      "expectedHazardBadge": "☣️ CRITICAL THREAT",
+      "expectedRuleIds": [
+        "rule-broad-noncompete"
+      ]
+    },
+    {
+      "id": "TC-06",
+      "file": "06_clean_freelancer_baseline.md",
+      "name": "Clean Freelancer Friendly Baseline",
+      "expectedMinScore": 0,
+      "expectedMaxScore": 30,
+      "expectedHazardBadge": "🛡️ SAFE & FAIR",
+      "expectedRuleIds": []
+    }
+  ]
+}
