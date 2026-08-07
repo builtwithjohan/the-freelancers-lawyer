@@ -37,21 +37,38 @@ export default function ClauseInspector({ contractText, flaggedClauses, onApplyF
         {/* Highlighted Contract Scroll View */}
         <div className="contract-viewer-paper" style={{ flex: 1 }}>
           {contractText.split('\n\n').map((paragraph, pIdx) => {
-            // Match clause snippet or section header (DI-09)
-            const matchingClause = flaggedClauses.find(c => {
-              const snippetSub = c.originalSnippet.slice(0, 35).toLowerCase();
-              return snippetSub && paragraph.toLowerCase().includes(snippetSub);
+            const paragraphLower = paragraph.toLowerCase().trim();
+            if (!paragraphLower) return null;
+
+            // Support overlapping / multiple flagged clauses per paragraph (DI-09)
+            const matchingClauses = flaggedClauses.filter(c => {
+              const snippetLower = c.originalSnippet.toLowerCase().trim();
+              if (!snippetLower) return false;
+
+              // Match exact snippet, character offset range, or significant substring
+              const subMatch = snippetLower.length > 25 ? snippetLower.slice(0, 25) : snippetLower;
+              return paragraphLower.includes(subMatch);
             });
 
-            if (matchingClause) {
-              const isSelected = activeClauseId === matchingClause.id;
-              const isFixed = appliedFixes[matchingClause.id];
+            if (matchingClauses.length > 0) {
+              const primaryClause = matchingClauses.find(c => c.id === activeClauseId) || matchingClauses[0];
+              const isSelected = matchingClauses.some(c => c.id === activeClauseId);
+              const isFixed = matchingClauses.every(c => appliedFixes[c.id]);
 
               return (
                 <div
-                  key={`${matchingClause.id}-${pIdx}`}
-                  onClick={() => setSelectedClauseId(matchingClause.id)}
-                  className={`highlight-clause ${matchingClause.severity} ${isSelected ? 'active' : ''}`}
+                  key={`${primaryClause.id}-${pIdx}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedClauseId(primaryClause.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedClauseId(primaryClause.id);
+                    }
+                  }}
+                  aria-label={`Clause highlight: ${primaryClause.title}`}
+                  className={`highlight-clause ${primaryClause.severity} ${isSelected ? 'active' : ''}`}
                   style={{
                     marginBottom: '16px',
                     padding: '12px',
@@ -61,13 +78,20 @@ export default function ClauseInspector({ contractText, flaggedClauses, onApplyF
                       : isSelected
                       ? 'rgba(255, 59, 92, 0.2)'
                       : 'rgba(255, 59, 92, 0.08)',
-                    borderLeft: `4px solid ${isFixed ? '#00e676' : matchingClause.severity === 'CRITICAL' ? '#ff3b5c' : '#ffb800'}`
+                    borderLeft: `4px solid ${isFixed ? '#00e676' : primaryClause.severity === 'CRITICAL' ? '#ff3b5c' : '#ffb800'}`,
+                    cursor: 'pointer'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span className={`badge-threat ${matchingClause.severity}`} style={{ fontSize: '0.7rem' }}>
-                      {matchingClause.severity} • {matchingClause.sectionTitle}
-                    </span>
+                  {/* Render ALL matching threat badges for overlapping flags (DI-09) */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {matchingClauses.map(mc => (
+                        <span key={mc.id} className={`badge-threat ${mc.severity}`} style={{ fontSize: '0.7rem' }}>
+                          {mc.severity} • {mc.title}
+                        </span>
+                      ))}
+                    </div>
+
                     {isFixed ? (
                       <span style={{ color: '#00e676', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <CheckCircle2 size={12} /> REDLINED
@@ -105,11 +129,13 @@ export default function ClauseInspector({ contractText, flaggedClauses, onApplyF
             </p>
           </div>
 
-          {/* Clause Tabs selector */}
+          {/* Clause Tabs selector with keyboard support (DI-15) */}
           <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', maxWidth: '200px' }}>
             {flaggedClauses.map((c, i) => (
               <button
                 key={c.id}
+                role="tab"
+                aria-selected={activeClauseId === c.id}
                 onClick={() => setSelectedClauseId(c.id)}
                 style={{
                   width: '28px',

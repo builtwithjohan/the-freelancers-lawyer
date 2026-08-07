@@ -25,31 +25,46 @@ export function analyzeContract(contractText) {
       categoriesCount: {},
       cleanSectionsCount: 0,
       totalSections: 0,
+      foundRuleIds: [],
       disclaimer: CANONICAL_LEGAL_DISCLAIMER
     };
   }
 
   const sections = sectionizeContract(contractText);
   const flaggedClauses = [];
-  const foundRuleIds = new Set();
+  const foundRuleIds = new Set(); // Populated and tracked for unique rule counts (DI-03)
+
+  let cumulativeOffset = 0;
 
   // Test sections against rules
-  sections.forEach((sec, secIdx) => {
+  sections.forEach((sec) => {
+    const secStartIndex = contractText.indexOf(sec.text, cumulativeOffset);
+    if (secStartIndex !== -1) {
+      cumulativeOffset = secStartIndex + sec.text.length;
+    }
+
     ANALYSIS_RULES.forEach(rule => {
-      if (rule.regex.test(sec.text)) {
+      const match = rule.regex.exec(sec.text);
+      if (match) {
         foundRuleIds.add(rule.id);
 
         const lineMatches = sec.text.split('\n').filter(l => rule.regex.test(l));
         const matchedSnippet = lineMatches[0] || sec.text.slice(0, 180) + '...';
 
-        // Generate stable clause key (DI-01)
-        const clauseKey = `${rule.id}::sec-${secIdx}`;
+        // Stable ID based on rule ID + section title slug (DI-01 - no positional secIdx)
+        const titleSlug = (sec.title || 'preamble').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const stableClauseKey = `${rule.id}::${titleSlug}`;
+
+        // Compute exact character offset in document (DI-09)
+        const matchOffsetInSection = sec.text.indexOf(matchedSnippet.trim());
+        const docStartIndex = secStartIndex !== -1 && matchOffsetInSection !== -1
+          ? secStartIndex + matchOffsetInSection
+          : -1;
 
         flaggedClauses.push({
-          id: clauseKey,
+          id: stableClauseKey,
           ruleId: rule.id,
-          sectionIndex: secIdx,
-          sectionTitle: sec.title || `Clause #${secIdx + 1}`,
+          sectionTitle: sec.title || 'Clause',
           category: rule.category,
           categoryInfo: RISK_CATEGORIES[rule.category.toUpperCase()] || { name: rule.category },
           title: rule.title,
@@ -60,6 +75,8 @@ export function analyzeContract(contractText) {
           plainEnglish: rule.plainEnglish,
           legalWarning: rule.legalWarning,
           fixRecommendation: rule.fixRecommendation,
+          docStartIndex,
+          docEndIndex: docStartIndex !== -1 ? docStartIndex + matchedSnippet.trim().length : -1,
           isFixed: false
         });
       }
@@ -84,6 +101,7 @@ export function analyzeContract(contractText) {
     categoriesCount,
     totalSections: sections.length,
     cleanSectionsCount: scoreMetrics.cleanSectionsCount,
+    foundRuleIds: Array.from(foundRuleIds),
     disclaimer: CANONICAL_LEGAL_DISCLAIMER
   };
 }

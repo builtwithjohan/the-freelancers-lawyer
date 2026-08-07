@@ -36,13 +36,17 @@ export default function App() {
     setAppliedFixes({});
   };
 
-  // Trigger manual scan focus (DI-14)
+  // Trigger manual scan focus and smooth scroll to diagnostics (DI-14)
   const handleRunScan = () => {
     confetti({
       particleCount: 40,
       spread: 60,
       origin: { y: 0.4 }
     });
+    const element = document.getElementById('analysis-overview-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   // Apply or Revert Pro-Freelancer Counter-Clause Redline (DI-01)

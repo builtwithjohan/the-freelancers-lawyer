@@ -70,6 +70,47 @@ body {
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Reusable Utility Classes (DI-13) */
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.code-box {
+  background: #0b0f19;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.textarea-input {
+  width: 100%;
+  background: #0b0f19;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  outline: none;
+}
+
 /* Glassmorphism Containers */
 .glass-panel {
   background: var(--bg-card);

@@ -19,7 +19,7 @@ export default function AnalysisOverview({ analysis, onOpenEmailModal, onExportD
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
+    <div id="analysis-overview-section" className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '28px', alignItems: 'center' }} className="grid-2col">
         {/* SVG Risk Gauge Meter */}
         <div style={{ textAlign: 'center' }}>

@@ -1,24 +1,18 @@
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Bundle worker locally or configure workerSrc safely (DI-06)
-if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-  try {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/build/pdf.worker.min.mjs',
-      import.meta.url
-    ).toString();
-  } catch (e) {
-    // Fallback to local static or CDN worker if import URL resolves cross-origin
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
-  }
-}
+import workerUrl from 'pdfjs-dist/build/pdf.worker.js?url';
 
 /**
- * Extracts plain contract text from a PDF ArrayBuffer or File object.
+ * Lazy-loaded PDF document parser (DI-05, DI-06, bundle splitting)
  */
 export async function parsePdfFile(file) {
   if (!file) {
     throw new Error('No PDF file provided.');
+  }
+
+  // Dynamically import pdfjs-dist only when a PDF file is uploaded
+  const pdfjsLib = await import('pdfjs-dist');
+  
+  if (pdfjsLib.GlobalWorkerOptions) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
   }
 
   const arrayBuffer = await file.arrayBuffer();
