@@ -10,14 +10,22 @@ export default function ContractUploader({ contractText, setContractText, onAnal
 
   const processFile = async (file) => {
     if (!file) return;
+
+    // Validate DOCX or binary non-PDF formats (DI-11)
+    if (file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc')) {
+      setStatusMessage('DOCX files contain binary markup. Please save as .PDF or paste contract text directly.');
+      return;
+    }
+
     setIsScanning(true);
-    setStatusMessage(`Reading PDF Document (${file.name})...`);
+    const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+    setStatusMessage(isPdf ? `Extracting PDF text (${file.name})...` : `Reading document text (${file.name})...`);
 
     try {
-      if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
+      if (isPdf) {
         const text = await parsePdfFile(file);
         setContractText(text);
-        setStatusMessage(`Successfully extracted PDF contract text!`);
+        setStatusMessage('Successfully extracted PDF contract text!');
         setTimeout(() => {
           setIsScanning(false);
           setStatusMessage('');
@@ -34,11 +42,15 @@ export default function ContractUploader({ contractText, setContractText, onAnal
             if (onAnalyze) onAnalyze();
           }
         };
+        reader.onerror = () => {
+          setStatusMessage('Failed to read text file.');
+          setIsScanning(false);
+        };
         reader.readAsText(file);
       }
     } catch (err) {
       console.error('Failed to parse document:', err);
-      setStatusMessage('Error parsing PDF file. Please try pasting raw text.');
+      setStatusMessage(err.message || 'Error parsing document file. Please paste contract text directly.');
       setIsScanning(false);
     }
   };
@@ -70,18 +82,21 @@ export default function ContractUploader({ contractText, setContractText, onAnal
             </p>
           </div>
           <div style={{ fontSize: '0.8rem', background: 'rgba(255, 59, 92, 0.1)', color: '#ff5c77', padding: '6px 14px', borderRadius: '20px', border: '1px solid rgba(255, 59, 92, 0.2)', fontWeight: 700 }}>
-            ⚡ Instant AI Threat Detection
+            ⚡ Rule-Based Threat Detection
           </div>
         </div>
 
-        {/* Preset Cards Grid */}
+        {/* Preset Cards Grid (DI-15: ARIA role & keyboard handlers) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
           {PRESET_CONTRACTS.map((preset) => {
             const isActive = activePresetId === preset.id;
             return (
               <div
                 key={preset.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelectPreset(preset)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectPreset(preset); }}
                 className="glass-card"
                 style={{
                   cursor: 'pointer',
@@ -134,7 +149,7 @@ export default function ContractUploader({ contractText, setContractText, onAnal
       {/* Upload Zone & Manual Paste Box */}
       <div className="glass-panel" style={{ padding: '24px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }} className="grid-2col">
-          {/* Drag & Drop Upload Zone for PDF / DOCX */}
+          {/* Drag & Drop Upload Zone */}
           <div
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
@@ -155,7 +170,7 @@ export default function ContractUploader({ contractText, setContractText, onAnal
           >
             <input
               type="file"
-              accept=".pdf,.docx,.doc,.txt,.md"
+              accept=".pdf,.txt,.md"
               onChange={handleFileUpload}
               style={{
                 position: 'absolute',
@@ -165,6 +180,7 @@ export default function ContractUploader({ contractText, setContractText, onAnal
                 width: '100%',
                 height: '100%'
               }}
+              aria-label="Upload PDF or text contract file"
             />
             <div style={{
               width: '56px',
@@ -180,14 +196,14 @@ export default function ContractUploader({ contractText, setContractText, onAnal
               <UploadCloud size={28} />
             </div>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px' }}>
-              {isScanning ? 'Extracting PDF Contract Text...' : 'Drop Client PDF Contract Here'}
+              {isScanning ? 'Extracting Contract Text...' : 'Drop Client PDF Contract Here'}
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              Native support for <strong>.PDF</strong>, .DOCX, and plain text agreements
+              Supports <strong>.PDF</strong>, .TXT, and Markdown documents
             </p>
 
             {statusMessage ? (
-              <span style={{ fontSize: '0.78rem', color: 'var(--info-cyan)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--info-cyan)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <FileCheck size={14} /> {statusMessage}
               </span>
             ) : (
@@ -200,7 +216,7 @@ export default function ContractUploader({ contractText, setContractText, onAnal
           {/* Quick Paste & Edit Text Box */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label htmlFor="contract-text-input" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <FileText size={16} /> Extracted / Pasted Contract Text
               </label>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
@@ -209,6 +225,7 @@ export default function ContractUploader({ contractText, setContractText, onAnal
             </div>
 
             <textarea
+              id="contract-text-input"
               value={contractText}
               onChange={(e) => setContractText(e.target.value)}
               placeholder="Extracted PDF text or pasted contract clauses will appear here..."
@@ -244,7 +261,7 @@ export default function ContractUploader({ contractText, setContractText, onAnal
                 style={{ opacity: !contractText.trim() ? 0.6 : 1 }}
               >
                 <Sparkles size={16} />
-                <span>Run AI Threat Scan</span>
+                <span>Focus Audit Scan</span>
               </button>
             </div>
           </div>

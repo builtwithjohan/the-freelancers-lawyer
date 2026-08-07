@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle2, RefreshCw, FileText, ArrowRight, ShieldCheck, Sparkles, Copy, ExternalLink } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FileText, ShieldCheck, Sparkles, Copy } from 'lucide-react';
 
 export default function ClauseInspector({ contractText, flaggedClauses, onApplyFix, appliedFixes }) {
-  const [activeClauseId, setActiveClauseId] = useState(flaggedClauses[0]?.id || null);
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
+  const [selectedClauseId, setSelectedClauseId] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
-  const filteredClauses = selectedCategoryFilter === 'ALL'
-    ? flaggedClauses
-    : flaggedClauses.filter(c => c.category === selectedCategoryFilter);
-
-  const activeClause = flaggedClauses.find(c => c.id === activeClauseId) || flaggedClauses[0];
+  // Derive active clause gracefully without state-from-props anti-pattern (DI-16)
+  const activeClause = flaggedClauses.find(c => c.id === selectedClauseId) || flaggedClauses[0];
+  const activeClauseId = activeClause?.id;
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
@@ -29,7 +26,7 @@ export default function ClauseInspector({ contractText, flaggedClauses, onApplyF
               <span>Contract Text Inspector</span>
             </h3>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Click any highlighted line to inspect the trap breakdown
+              Click any highlighted clause to inspect threat details
             </p>
           </div>
           <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '4px 10px', borderRadius: '12px' }}>
@@ -40,10 +37,11 @@ export default function ClauseInspector({ contractText, flaggedClauses, onApplyF
         {/* Highlighted Contract Scroll View */}
         <div className="contract-viewer-paper" style={{ flex: 1 }}>
           {contractText.split('\n\n').map((paragraph, pIdx) => {
-            // Check if paragraph contains any flagged clause originalSnippet
-            const matchingClause = flaggedClauses.find(c =>
-              paragraph.toLowerCase().includes(c.originalSnippet.toLowerCase().slice(0, 40))
-            );
+            // Match clause snippet or section header (DI-09)
+            const matchingClause = flaggedClauses.find(c => {
+              const snippetSub = c.originalSnippet.slice(0, 35).toLowerCase();
+              return snippetSub && paragraph.toLowerCase().includes(snippetSub);
+            });
 
             if (matchingClause) {
               const isSelected = activeClauseId === matchingClause.id;
@@ -51,8 +49,8 @@ export default function ClauseInspector({ contractText, flaggedClauses, onApplyF
 
               return (
                 <div
-                  key={pIdx}
-                  onClick={() => setActiveClauseId(matchingClause.id)}
+                  key={`${matchingClause.id}-${pIdx}`}
+                  onClick={() => setSelectedClauseId(matchingClause.id)}
                   className={`highlight-clause ${matchingClause.severity} ${isSelected ? 'active' : ''}`}
                   style={{
                     marginBottom: '16px',
@@ -112,7 +110,7 @@ export default function ClauseInspector({ contractText, flaggedClauses, onApplyF
             {flaggedClauses.map((c, i) => (
               <button
                 key={c.id}
-                onClick={() => setActiveClauseId(c.id)}
+                onClick={() => setSelectedClauseId(c.id)}
                 style={{
                   width: '28px',
                   height: '28px',

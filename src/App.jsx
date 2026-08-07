@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import confetti from 'canvas-confetti';
 import Navbar from './components/Navbar';
 import ContractUploader from './components/ContractUploader';
@@ -10,19 +10,24 @@ import LegalGuide from './components/LegalGuide';
 import Footer from './components/Footer';
 
 import { PRESET_CONTRACTS } from './data/presetContracts';
-import { analyzeContract } from './utils/contractAnalyzer';
+import { analyzeContract, CANONICAL_LEGAL_DISCLAIMER } from './utils/contractAnalyzer';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('inspector');
   const [contractText, setContractText] = useState(PRESET_CONTRACTS[0].text);
   const [activePresetId, setActivePresetId] = useState(PRESET_CONTRACTS[0].id);
+  
+  // Track applied redline amendments structurally (DI-01)
   const [appliedFixes, setAppliedFixes] = useState({});
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
-  // Run real-time AI Contract Analysis
+  // Debounce analysis using React useDeferredValue for smooth typing (DI-18)
+  const deferredContractText = useDeferredValue(contractText);
+
+  // Run real-time AI Contract Analysis on deferred contract text
   const analysis = useMemo(() => {
-    return analyzeContract(contractText);
-  }, [contractText]);
+    return analyzeContract(deferredContractText);
+  }, [deferredContractText]);
 
   // Handle Preset Contract Selection
   const handleSelectPreset = (preset) => {
@@ -31,7 +36,7 @@ export default function App() {
     setAppliedFixes({});
   };
 
-  // Trigger manual scan
+  // Trigger manual scan focus (DI-14)
   const handleRunScan = () => {
     confetti({
       particleCount: 40,
@@ -40,26 +45,30 @@ export default function App() {
     });
   };
 
-  // Apply Pro-Freelancer Counter-Clause Redline to contract
+  // Apply or Revert Pro-Freelancer Counter-Clause Redline (DI-01)
   const handleApplyFix = (clause) => {
     const isAlreadyFixed = appliedFixes[clause.id];
 
     if (isAlreadyFixed) {
-      // Revert fix
-      setContractText(prev => prev.replace(clause.fixRecommendation, clause.originalSnippet));
-      setAppliedFixes(prev => ({ ...prev, [clause.id]: false }));
+      // Revert fix structurally
+      if (contractText.includes(clause.fixRecommendation)) {
+        setContractText(prev => prev.replace(clause.fixRecommendation, clause.originalSnippet));
+      }
+      setAppliedFixes(prev => {
+        const next = { ...prev };
+        delete next[clause.id];
+        return next;
+      });
     } else {
       // Apply counter-clause replacement
       if (contractText.includes(clause.originalSnippet)) {
         setContractText(prev => prev.replace(clause.originalSnippet, clause.fixRecommendation));
       } else {
-        // Fallback append if snippet modified
         setContractText(prev => prev + `\n\n[AMENDMENT TO ${clause.sectionTitle}]: ${clause.fixRecommendation}`);
       }
 
       setAppliedFixes(prev => ({ ...prev, [clause.id]: true }));
 
-      // Trigger celebrate confetti
       confetti({
         particleCount: 50,
         spread: 70,
@@ -68,20 +77,27 @@ export default function App() {
     }
   };
 
-  // Export clean redlined contract as Markdown/TXT file
+  // Export clean redlined contract with DOM attach and readable date (DI-02, DI-17)
   const handleExportDoc = () => {
-    const header = `====================================================\nTHE FREELANCER'S LAWYER - REDLINED CONTRACT EXPORT\nRisk Index Score: ${analysis.score}/100 (${analysis.badge})\nExport Date: ${new Date().toLocaleDateString()}\n====================================================\n\n`;
-    const fullDoc = header + contractText;
-    const blob = new Blob([fullDoc], { type: 'text/plain;charset=utf-8' });
+    const dateStr = new Date().toISOString().split('T')[0];
+    const header = `# THE FREELANCER'S LAWYER — REDLINED CONTRACT EXPORT\n\n- **Risk Index Score:** ${analysis.score}/100 (${analysis.badge})\n- **Export Date:** ${dateStr}\n\n---\n\n`;
+    const footer = `\n\n---\n\n## LEGAL DISCLAIMER\n${CANONICAL_LEGAL_DISCLAIMER}\n`;
+
+    const fullDoc = header + contractText + footer;
+    const blob = new Blob([fullDoc], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
+
+    // Attach to DOM before click to prevent browser download blocks (DI-17)
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Redlined_Contract_Report_${Date.now()}.txt`;
+    link.download = `Redlined_Contract_Report_${dateStr}.md`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
-  const fixedCount = Object.values(appliedFixes).filter(Boolean).length;
+  const fixedCount = Object.keys(appliedFixes).length;
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

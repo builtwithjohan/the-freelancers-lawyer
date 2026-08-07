@@ -7,8 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node tests/testContractAnalyzer.test.js && node tests/testPdfContractAnalyzer.test.js",
-    "test:pdf": "node tests/testPdfContractAnalyzer.test.js",
+    "test": "vitest run",
     "generate-pdf-tests": "node scripts/generatePdfTestContracts.js"
   },
   "dependencies": {
@@ -21,6 +20,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.3",
     "pdf-lib": "^1.17.1",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^1.6.0"
   }
 }

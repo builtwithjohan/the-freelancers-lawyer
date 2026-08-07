@@ -22,3 +22,6 @@ scripts
 # OS files
 .DS_Store
 Thumbs.db
+.github/instructions/
+graphify-out
+DESIGN_ISSUES.md

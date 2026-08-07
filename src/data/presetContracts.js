@@ -1,11 +1,10 @@
-export const PRESET_CONTRACTS = [
+import { analyzeContract } from '../utils/contractAnalyzer.js';
+
+const RAW_PRESETS = [
   {
     id: 'agency-trap',
     title: 'The Agency Trap MSA',
     subtitle: 'High-Risk Master Services Agreement',
-    riskScore: 92,
-    badge: '☣️ CRITICAL HAZARD',
-    badgeColor: '#ff3b5c',
     description: 'Packed with Net-90 payment terms, IP transfer before payment, unlimited revisions, and uncapped personal liability.',
     text: `MASTER SERVICES AGREEMENT
 
@@ -34,9 +33,6 @@ This Agreement shall be governed by the laws of the State of Delaware. Any legal
     id: 'stealth-ip-grab',
     title: 'The Stealth IP Grab SOW',
     subtitle: 'Sneaky Intellectual Property Theft',
-    riskScore: 84,
-    badge: '🚨 HIGH RISK',
-    badgeColor: '#ff6b35',
     description: 'Looks standard at first glance, but quietly steals pre-existing freelancer tools, personal code libraries, and future independent inventions.',
     text: `STATEMENT OF WORK & DEVELOPMENT AGREEMENT
 
@@ -56,9 +52,6 @@ Client agrees to remit payment within 60 days of invoice receipt. Payment is con
     id: 'neverending-scope',
     title: 'The Scope Creep & Fines SOW',
     subtitle: 'Unlimited Edits & Daily Delay Penalties',
-    riskScore: 78,
-    badge: '⚠️ MODERATE RISK',
-    badgeColor: '#ffb800',
     description: 'Vague scope parameters, client-controlled timeline delays, liquidated damages of $500/day for missed deadlines, and financial audit rights.',
     text: `CREATIVE RETAINER & DESIGN SERVICES CONTRACT
 
@@ -75,9 +68,6 @@ Client reserves the right, upon 24 hours notice, to audit Designer's internal ti
     id: 'fair-freelancer-msa',
     title: 'The Freelancer Friendly Agreement',
     subtitle: 'Balanced & Protected Standard Contract',
-    riskScore: 18,
-    badge: '🛡️ SAFE & BALANCED',
-    badgeColor: '#00e676',
     description: 'Clean baseline example featuring Net-15 payment terms, IP transfer upon full payment, capped liability, and clear change order rules.',
     text: `INDEPENDENT CONTRACTOR SERVICES AGREEMENT
 
@@ -97,3 +87,14 @@ Neither party shall be liable for indirect, incidental, or consequential damages
 Either party may terminate this Agreement with fourteen (14) days written notice. In the event of early termination by Client, Client agrees to pay Contractor for all work completed up to the effective date of termination, plus a kill fee of 25% of the remaining contract value.`
   }
 ];
+
+// Derive preset risk scores dynamically at module load time to prevent drift (DI-12)
+export const PRESET_CONTRACTS = RAW_PRESETS.map(preset => {
+  const res = analyzeContract(preset.text);
+  return {
+    ...preset,
+    riskScore: res.score,
+    badge: res.badge,
+    badgeColor: res.badgeColor
+  };
+});
